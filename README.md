@@ -1,18 +1,24 @@
 # Pague-se Primeiro — Dashboard Financeiro Interativo & Cidade 3D
 
+## 🔗 Demonstração Online (GitHub Pages)
+Acesse e interaja com o projeto ao vivo em: **[https://rafaelviana-dev.github.io/pague-se-primeiro/](https://rafaelviana-dev.github.io/pague-se-primeiro/)**
+
+---
+
 Bem-vindo ao **Pague-se Primeiro**, uma aplicação web moderna, interativa e altamente visual voltada para o planejamento financeiro pessoal de longo prazo, gamificação de metas e acompanhamento de patrimônio. 
 
 O projeto é baseado no princípio financeiro homônimo: poupar uma parcela fixa de suas receitas mensais logo no início do mês ("pagando-se primeiro") e investir esse valor para construir um patrimônio duradouro. Para motivar a consistência, o aplicativo transforma seu progresso financeiro em uma **cidade 3D evolutiva**.
 
 ---
 
-## 🏛️ Filosofia do Projeto
+## 🏛️ Filosofia do Projeto e Mecânicas de Gamificação
 
 A consistência em economizar é um desafio psicológico. O **Pague-se Primeiro** aborda esse problema através da gamificação:
 1. **O Orbe de Patrimônio:** O centro da interface clássica é dominado por um Orbe flutuante que reage às suas metas, brilhando em tons dourados ou verdes quando você é consistente, e mudando para vermelho/alerta caso precise de atenção.
-2. **A Cidade 3D (Simulação de Enriquecimento):** Uma representação tridimensional do seu progresso.
-   - **Economias Mensais (Construções Comuns):** Cada mês em que você poupa mais do que a sua meta mensal (ex: 10% da sua renda) adiciona uma nova **Casa Comum** na periferia da cidade.
-   - **Crescimento Patrimonial (Prédios Especiais):** A cada 10% da sua Meta de Patrimônio acumulada de longo prazo, um novo monumento ou grande edifício especial (Chafariz, Lojas, Hospitais, Parques e Arranha-céus) é erguido no coração da cidade.
+2. **A Cidade 3D (Simulação de Enriquecimento):** Uma representação tridimensional do seu progresso, com as seguintes mecânicas:
+   - **Economias Mensais (Casas Comuns):** Cada mês em que você poupa mais do que 10% (ou a meta estipulada) da sua **renda mensal** adiciona uma nova **Casa Comum** na periferia da cidade, representando a sua constância diária/mensal.
+   - **Crescimento Patrimonial (Monumentos e Prédios Especiais):** A cada 10% de progresso em direção à sua **Meta de Patrimônio de Longo Prazo**, um novo marco especial é erguido no centro da cidade.
+   - **Controles de Câmera Livres:** A cidade 3D suporta manipulação e rotação completa de ângulo através do mouse (botão esquerdo para rotacionar, botão direito para mover a câmera e scroll para aproximar/afastar).
 
 ---
 
@@ -66,24 +72,26 @@ Principais funções analíticas:
 Controla o ecossistema 3D sob o framework **Three.js**.
 * **Visualização Livre:** Configura `OrbitControls` permitindo ao usuário girar (botão esquerdo do mouse/drag), mover (botão direito) e aproximar/afastar (scroll) a câmera.
 * **Malha de Ruas e Terreno:** Renderiza uma base de grama cercada por estradas cruzadas em cinza escuro e postes de iluminação minimalistas nas esquinas.
-* **Marcos Especiais (Milestones):** Desenha e adiciona elementos especiais no centro da cidade à medida que a meta acumulada progride:
+* **Marcos Especiais (Milestones):** Desenha e adiciona elements especiais no centro da cidade à medida que a meta acumulada progride:
   1. `10%`: **Chafariz (Monumento)** - Base em pedra com pilares centrais e jato de água translúcido em azul brilhante.
-  2. `20%`: **Loja** - Edificação comercial clássica com toldos vermelhos e vidros frontais.
+  2. `20%`: **Loja** - Edificação comercial posicionada para evitar colisões com o chafariz.
   3. `30%`: **Carro** - Veículo de passeio com rodas, vidros e faróis acesos circulando pelas ruas.
   4. `40%`: **Prédio Comercial** - Estrutura de múltiplos andares com janelas de vidro.
   5. `50%`: **Hospital** - Prédio com o símbolo clássico de cruz médica vermelha em relevo.
-  6. `60%`: **Ônibus** + Veículos adicionais circulando.
-  7. `70%`: **Shopping Center** - Grande edifício de lazer com letreiros brilhantes.
-  8. `80%`: **Arranha-céu (Skyscraper)** - A maior estrutura da cidade, com heliponto no topo.
+  6. `60%`: **Campo de Futebol** - Um gramado esportivo completo com marcações brancas e traves de gol de metal, posicionado nos limites do loteamento.
+  7. `70%`: **Shopping Center** - Grande edifício de lazer com letreiros brilhantes posicionado nos limites periféricos para evitar sobreposição espacial.
+  8. `80%`: **Arranha-céu (Skyscraper)** - A maior estrutura da cidade, com heliponto no topo e recuo espacial planejado para evitar colisões visuais.
   9. `90%`: **Parque Urbano** - Bancos de madeira, gramado plano e várias árvores coníferas detalhadas.
-  10. `100%`: **Celebração Final** - Dispara confetes flutuantes e luzes festivas.
-* **Casas Comuns Procedurais:** Mapeia um grid periférico longe do centro. Para cada mês de meta mensal batida, constrói uma casa clássica de telhado triangular com chaminé, aplicando rotações de 90° e leves variações de posição de forma pseudo-aleatória para criar um visual orgânico de vizinhança.
+  10. `100%`: **Show de Fogos de Artifício** - Um sistema de partículas procedurais que lança fogos coloridos das extremidades e laterais do terreno, celebrando a conquista do patrimônio total estabelecido.
+* **Layout sem colisões:** Os elementos como Loja, Shopping Center e Arranha-céu foram espaçados adequadamente para garantir que as malhas 3D nunca se sobreponham. Os veículos, como o ônibus no milestone de 60%, são inicializados no sentido correto das pistas para um visual condizente.
+* **Casas Comuns Procedurais:** Mapeia um grid periférico longe do centro. Para cada mês de meta mensal batida (investimentos >= 10% da sua renda), constrói uma casa clássica de telhado triangular com chaminé, aplicando rotações de 90° e leves variações de posição de forma pseudo-aleatória para criar um visual orgânico de vizinhança.
 
 ### 3. Interface de Usuário (`js/ui.js`)
 Orquestra as atualizações cirúrgicas do DOM, evitando renderizações desnecessárias e melhorando a performance:
 * **Animação Incremental de Valores:** Quando um registro financeiro é inserido, os valores monetários no topo e no orbe sobem e descem usando interpolação matemática suave (`requestAnimationFrame`) em vez de saltar de um número a outro de forma abrupta.
 * **Gráficos Financeiros:** Integração com **Chart.js** exibindo um gráfico de barras moderno para as receitas de cada mês, sobreposto por uma linha suave indicando as economias reais do usuário.
 * **Linha do Tempo (Timeline):** Exibe de forma cronológica as economias mensais, atribuindo insígnias verdes para os meses vitoriosos e alertas para os meses abaixo da meta estabelecida.
+* **Contadores Responsivos:** O contador da tela inicial reage dinamicamente conforme as metas configuradas pelo usuário.
 
 ---
 
@@ -107,8 +115,8 @@ Orquestra as atualizações cirúrgicas do DOM, evitando renderizações desnece
 | **Economizou >= 10% da renda mensal num mês** | Brilha em verde (ou dourado se acumular 3 meses seguidos de consistência). | Cria **1 nova casa comum** nos arredores residenciais. |
 | **Economizou < 10% da renda mensal num mês** | Brilha em vermelho/alerta (sinalizando a falha). | Nenhuma casa comum é construída para aquele mês. |
 | **Atingiu 10% da Meta de Patrimônio Acumulada** | Mostra 10% no centro e preenche 10% do anel circular. | Constrói o **Chafariz central** no coração da praça. |
-| **Atingiu 50% da Meta de Patrimônio Acumulada** | Mostra 50% no centro e preenche metade do anel circular. | Constrói o **Hospital** no centro comercial. |
-| **Atingiu 100% da Meta de Patrimônio Acumulada** | Brilha intensamente e completa o círculo. | Dispara a **Celebração de Confetes** e a cidade está completa. |
+| **Atingiu 60% da Meta de Patrimônio Acumulada** | Mostra 60% no centro e preenche o anel correspondente. | Constrói o **Campo de Futebol** e posiciona o Ônibus na pista. |
+| **Atingiu 100% da Meta de Patrimônio Acumulada** | Brilha intensamente e completa o círculo. | Dispara o **Show de Fogos de Artifício** contínuo nas extremidades do terreno. |
 
 ---
 
