@@ -1,0 +1,234 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Design System — "Pague-se Primeiro"
+   Variáveis globais, resets, tipografia e animações base.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+    /* ── Color Palette: Comportamental & Reforço Positivo ── */
+    --color-bg-base: #0F172A;
+    --color-bg-radial: #162033;
+    --color-surface-glass: rgba(30, 41, 59, 0.45);
+    --color-surface-glass-border: rgba(255, 255, 255, 0.08);
+    --color-surface-glass-border-hover: rgba(255, 255, 255, 0.14);
+
+    --color-text-primary: #F1F5F9;
+    --color-text-secondary: #94A3B8;
+    --color-text-muted: #64748B;
+
+    /* ── State Colors ── */
+    --color-success: #10B981;
+    --color-success-glow: rgba(16, 185, 129, 0.35);
+    --color-success-soft: rgba(16, 185, 129, 0.12);
+
+    --color-alert: #EF4444;
+    --color-alert-glow: rgba(239, 68, 68, 0.2);
+    --color-alert-soft: rgba(239, 68, 68, 0.1);
+
+    --color-gold: #F59E0B;
+    --color-gold-glow: rgba(245, 158, 11, 0.35);
+
+    --color-neutral: #334155;
+    --color-neutral-soft: rgba(51, 65, 85, 0.4);
+
+    /* ── Typography ── */
+    --font-primary: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'Space Mono', 'Fira Code', monospace;
+
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 2rem;
+    --text-4xl: 2.5rem;
+
+    --weight-light: 300;
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+    --weight-bold: 700;
+
+    /* ── Spacing ── */
+    --spacing-2xs: 0.125rem;
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 2.5rem;
+    --spacing-3xl: 3rem;
+
+    /* ── Radii ── */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-glass: 24px;
+    --radius-pill: 9999px;
+
+    /* ── Transition ── */
+    --transition-speed: 300ms;
+    --transition-fast: 150ms;
+    --transition-slow: 600ms;
+    --transition-curve: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ── Shadows ── */
+    --shadow-glass: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    --shadow-elevated: 0 10px 25px rgba(0, 0, 0, 0.5);
+    --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Reset ── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* ── Base Document ── */
+html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-primary);
+    background: radial-gradient(ellipse at 50% 0%, var(--color-bg-radial) 0%, var(--color-bg-base) 70%);
+    color: var(--color-text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 5vh;
+    padding-bottom: 120px; /* Espaço para Omni-Bar */
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Particle Background Canvas ── */
+#particles-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* ── Custom Scrollbar (para glass-container) ── */
+.custom-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: var(--color-neutral);
+    border-radius: var(--radius-pill);
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-muted);
+}
+/* Firefox */
+.custom-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-neutral) transparent;
+}
+
+/* ── Selection ── */
+::selection {
+    background: var(--color-success);
+    color: var(--color-bg-base);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Keyframe Animations — Base
+   ═══════════════════════════════════════════════════════════════════ */
+
+@keyframes pulse-idle {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.04), inset 0 0 30px rgba(0, 0, 0, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.08), inset 0 0 30px rgba(0, 0, 0, 0.4);
+    }
+}
+
+@keyframes pulse-success {
+    0%, 100% {
+        box-shadow: 0 0 20px var(--color-success-glow), inset 0 0 30px rgba(0, 0, 0, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 40px var(--color-success-glow), inset 0 0 30px rgba(0, 0, 0, 0.4);
+    }
+}
+
+@keyframes pulse-gold {
+    0%, 100% {
+        box-shadow: 0 0 25px var(--color-gold-glow), inset 0 0 30px rgba(0, 0, 0, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 50px var(--color-gold-glow), inset 0 0 30px rgba(0, 0, 0, 0.4);
+    }
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fade-out-up {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-12px);
+    }
+}
+
+@keyframes slide-in-bottom {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes breathe {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* ── Utility ── */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}

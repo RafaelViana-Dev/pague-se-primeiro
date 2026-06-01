@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Pague-se Primeiro — Dashboard financeiro imersivo para construir o hábito de pagar a si mesmo antes de tudo. Acompanhe seus aportes mensais e veja seu patrimônio crescer.">
+    <meta name="theme-color" content="#0F172A">
+    <title>Pague-se Primeiro — Dashboard Financeiro Imersivo</title>
+
+    <!-- Fonts: Space Grotesk (geometric, strict) + Inter (fallback) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- CSS Dependencies -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+
+    <!-- Chart.js CDN (pinned version) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7" defer></script>
+
+    <!-- App Scripts (ES6 Modules) -->
+    <script type="module" src="js/app.js" defer></script>
+</head>
+
+<body>
+    <!-- Interactive Particle Background Canvas -->
+    <canvas id="particles-bg" aria-hidden="true"></canvas>
+
+    <!-- Central Stage (Glass Container) -->
+    <main class="glass-container custom-scroll" id="glass-container" role="main">
+        
+        <!-- "Orbe do Patrimônio" (Heritage Orb) — Foco visual de prazer/sucesso -->
+        <div class="heritage-orb" id="heritage-orb">
+            <!-- SVG Progress Ring -->
+            <svg class="orb-ring" viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="orb-ring__track" cx="60" cy="60" r="54"/>
+                <circle class="orb-ring__fill" id="orb-ring-fill" cx="60" cy="60" r="54"/>
+            </svg>
+            <!-- Orb Inner Content -->
+            <div class="orb-content">
+                <span class="orb-label">Patrimônio Líquido</span>
+                <h1 id="orb-value" aria-live="polite">R$ 0,00</h1>
+                <span class="orb-percent" id="orb-percent" aria-live="polite">0%</span>
+            </div>
+        </div>
+
+        <!-- Empty State (visible when no records) -->
+        <div id="empty-state" class="empty-state">
+            <div class="empty-state__icon" aria-hidden="true">✦</div>
+            <p class="empty-state__title">Comece sua jornada</p>
+            <p class="empty-state__subtitle">Use a barra abaixo para registrar seu primeiro mês de economia</p>
+        </div>
+
+        <!-- Data Flow: Chart (hidden when empty) -->
+        <div class="data-flow is-hidden" id="data-flow">
+            <canvas id="chart-rendimentos" aria-label="Gráfico de evolução financeira"></canvas>
+        </div>
+
+        <!-- Timeline de Registros Mensais (hidden when empty) -->
+        <div id="records-timeline" class="records-timeline is-hidden"></div>
+    </main>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- Floating Omni-Bar (Command Input) -->
+    <div class="omni-bar-container">
+        <form id="form-registro-financeiro" class="omni-bar" autocomplete="off" role="search" aria-label="Registrar dados financeiros do mês">
+            <input type="number" id="input-renda" class="omni-input" placeholder="Renda Mensal (R$)" step="0.01" min="0.01" required aria-label="Renda mensal em reais">
+            <span class="omni-divider" aria-hidden="true"></span>
+            <input type="number" id="input-economizado" class="omni-input" placeholder="Aporte (R$)" step="0.01" min="0" required aria-label="Valor economizado em reais">
+            <span class="omni-live-percent" id="omni-live-percent" aria-live="polite"></span>
+            <button type="submit" class="omni-btn" id="omni-submit-btn" aria-label="Registrar mês">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                    <polyline points="5 12 12 5 19 12"></polyline>
+                </svg>
+            </button>
+        </form>
+        <span class="kbd-hint" id="kbd-hint">Ctrl + Space</span>
+    </div>
+</body>
+
+</html>
