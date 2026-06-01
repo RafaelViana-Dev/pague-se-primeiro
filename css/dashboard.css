@@ -545,22 +545,23 @@
 /* ═══════════════════════════════════════════════════════
    Responsive — Mobile First Adjustments
    ═══════════════════════════════════════════════════════ */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
     body {
-        padding-top: 3vh;
-        padding-bottom: 140px;
+        padding-top: 2vh;
+        padding-bottom: 180px; /* More space for the omni-bar */
     }
 
     .glass-container {
-        width: 96%;
+        width: 95%;
         padding: var(--spacing-lg) var(--spacing-md);
-        max-height: 70vh;
+        max-height: 85vh; /* Better vertical space utilization */
         border-radius: var(--radius-lg);
     }
 
     .heritage-orb {
         width: 160px;
         height: 160px;
+        margin-bottom: var(--spacing-md);
     }
 
     #orb-value {
@@ -571,22 +572,25 @@
         height: 200px;
     }
 
-    /* Omni-Bar: empilhar inputs */
+    /* Omni-Bar: Column layout for better usability */
     .omni-bar-container {
-        width: 96%;
-        bottom: var(--spacing-md);
+        width: 95%;
+        bottom: var(--spacing-sm);
     }
 
     .omni-bar {
-        flex-wrap: wrap;
-        border-radius: var(--radius-lg);
+        flex-direction: column;
+        align-items: stretch;
+        border-radius: var(--radius-md);
         padding: var(--spacing-sm);
         gap: var(--spacing-xs);
     }
 
     .omni-input {
-        flex: 1 1 calc(50% - 40px);
-        font-size: var(--text-sm);
+        width: 100%;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: var(--radius-sm);
         padding: var(--spacing-sm);
     }
 
@@ -594,14 +598,20 @@
         display: none;
     }
 
+    .omni-live-percent {
+        margin: var(--spacing-xs) 0;
+    }
+
     .omni-btn {
-        width: 42px;
-        height: 42px;
+        width: 100%;
+        height: 48px;
+        border-radius: var(--radius-sm);
+        margin-top: var(--spacing-xs);
     }
 
     .timeline-details {
         flex-direction: column;
-        gap: var(--spacing-xs);
+        gap: var(--spacing-2xs);
     }
 
     .timeline-node {
@@ -609,7 +619,12 @@
     }
 }
 
-@media (max-width: 380px) {
+@media (max-width: 480px) {
+    .glass-container {
+        width: 98%;
+        padding: var(--spacing-md) var(--spacing-sm);
+    }
+
     .heritage-orb {
         width: 140px;
         height: 140px;
@@ -621,7 +636,7 @@
 
     .orb-label {
         font-size: 0.65rem;
-        letter-spacing: 1.5px;
+        letter-spacing: 1px;
     }
 }
 
@@ -1080,11 +1095,11 @@
 /* ═══════════════════════════════════════════════════════
    Responsive — New Components
    ═══════════════════════════════════════════════════════ */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
     .config-panel {
         flex-direction: column;
         gap: var(--spacing-sm);
-        padding: var(--spacing-sm);
+        padding: var(--spacing-md);
     }
 
     .config-panel__group {
@@ -1092,27 +1107,74 @@
         justify-content: space-between;
     }
 
+    .config-panel__label {
+        flex-shrink: 0;
+    }
+
     .config-panel__input {
         flex: 1;
         width: auto;
+        max-width: 60%;
+        text-align: right;
     }
 
     .config-panel__divider {
         width: 100%;
         height: 1px;
-        margin: 0;
+        margin: var(--spacing-xs) 0;
+    }
+
+    .btn-clear {
+        width: 100%;
+        justify-content: center;
+        padding: var(--spacing-sm);
+    }
+
+    .view-toggle-container {
+        margin-bottom: var(--spacing-md);
+    }
+
+    .view-toggle {
+        width: 100%;
     }
 
     .view-toggle__btn {
-        font-size: 0.65rem;
-        padding: var(--spacing-xs) var(--spacing-sm);
+        flex: 1;
+        justify-content: center;
+        font-size: var(--text-xs);
+        padding: var(--spacing-sm);
     }
 
     .city-container {
-        aspect-ratio: 4 / 3;
+        aspect-ratio: 1 / 1;
+        max-height: 50vh;
+    }
+
+    .progress-header {
+        flex-direction: column;
+        align-items: center;
+        gap: var(--spacing-2xs);
+    }
+
+    .progress-milestones {
+        display: none; /* Esconder milestones em telas pequenas para evitar sobreposição */
     }
 
     .confirm-dialog {
         padding: var(--spacing-lg);
+    }
+}
+
+@media (max-width: 480px) {
+    .config-panel__group {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-2xs);
+    }
+
+    .config-panel__input {
+        max-width: 100%;
+        width: 100%;
+        text-align: left;
     }
 }
