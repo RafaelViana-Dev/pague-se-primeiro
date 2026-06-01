@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Pague-se Primeiro — Dashboard financeiro imersivo para construir o hábito de pagar a si mesmo antes de tudo. Acompanhe seus aportes mensais e veja seu patrimônio crescer.">
+    <meta name="description" content="Pague-se Primeiro — Dashboard financeiro imersivo com cidade 3D que cresce conforme seu patrimônio. Defina metas, acompanhe aportes e veja seu progresso ganhar vida.">
     <meta name="theme-color" content="#0F172A">
     <title>Pague-se Primeiro — Dashboard Financeiro Imersivo</title>
 
@@ -16,6 +16,10 @@
     <!-- CSS Dependencies -->
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/dashboard.css">
+
+    <!-- Three.js CDN (for 3D city) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" defer></script>
 
     <!-- Chart.js CDN (pinned version) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7" defer></script>
@@ -31,7 +35,54 @@
     <!-- Central Stage (Glass Container) -->
     <main class="glass-container custom-scroll" id="glass-container" role="main">
         
-        <!-- "Orbe do Patrimônio" (Heritage Orb) — Foco visual de prazer/sucesso -->
+        <!-- Config Panel: Meta + Prazo + Limpar -->
+        <div class="config-panel" id="config-panel">
+            <div class="config-panel__group">
+                <label class="config-panel__label" for="input-meta-patrimonio">🎯 Meta</label>
+                <input type="number" id="input-meta-patrimonio" class="config-panel__input" placeholder="R$ 100.000" step="1000" min="0" aria-label="Meta de patrimônio em reais">
+            </div>
+
+            <div class="config-panel__group">
+                <label class="config-panel__label" for="input-prazo-meta">📅 Prazo</label>
+                <input type="number" id="input-prazo-meta" class="config-panel__input" placeholder="Meses" step="1" min="1" aria-label="Prazo da meta em meses" style="width: 80px;">
+            </div>
+
+            <span class="config-panel__divider" aria-hidden="true"></span>
+
+            <button type="button" class="btn-clear" id="btn-clear-records" aria-label="Limpar todos os registros">
+                <span class="btn-clear__icon" aria-hidden="true">🗑️</span>
+                Limpar
+            </button>
+        </div>
+
+        <!-- View Toggle: Orbe ↔ Cidade -->
+        <div class="view-toggle-container" id="view-toggle-container">
+            <div class="view-toggle" role="tablist" aria-label="Alternar entre visualizações">
+                <button type="button" class="view-toggle__btn is-active" id="btn-view-orbe" role="tab" aria-selected="true" aria-controls="heritage-orb">
+                    <span class="view-toggle__icon" aria-hidden="true">💎</span>
+                    Contador
+                </button>
+                <button type="button" class="view-toggle__btn" id="btn-view-cidade" role="tab" aria-selected="false" aria-controls="city-container">
+                    <span class="view-toggle__icon" aria-hidden="true">🏙️</span>
+                    Cidade
+                </button>
+            </div>
+        </div>
+
+        <!-- Progress Bar (Meta do Patrimônio) -->
+        <div class="progress-section" id="progress-section">
+            <div class="progress-header">
+                <span class="progress-label">Progresso da Meta</span>
+                <span class="progress-value" id="progress-value">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-bar__fill" id="progress-bar-fill" style="width: 0%;"></div>
+            </div>
+            <div class="progress-milestones" id="progress-milestones"></div>
+            <div class="progress-time-info" id="progress-time-info"></div>
+        </div>
+
+        <!-- "Orbe do Patrimônio" (Heritage Orb) -->
         <div class="heritage-orb" id="heritage-orb">
             <!-- SVG Progress Ring -->
             <svg class="orb-ring" viewBox="0 0 120 120" aria-hidden="true">
@@ -43,6 +94,14 @@
                 <span class="orb-label">Patrimônio Líquido</span>
                 <h1 id="orb-value" aria-live="polite">R$ 0,00</h1>
                 <span class="orb-percent" id="orb-percent" aria-live="polite">0%</span>
+            </div>
+        </div>
+
+        <!-- 3D City Container -->
+        <div class="city-container" id="city-container">
+            <canvas id="city-canvas" aria-label="Cidade 3D do patrimônio"></canvas>
+            <div class="city-overlay">
+                <div class="city-milestone-label" id="city-milestone-label">🌱 Defina uma meta para ver a cidade crescer</div>
             </div>
         </div>
 

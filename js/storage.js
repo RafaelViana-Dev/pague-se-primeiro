@@ -31,3 +31,14 @@ export function loadState() {
         return null;
     }
 }
+
+/**
+ * Remove completamente o estado salvo do LocalStorage.
+ */
+export function clearState() {
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+    } catch (error) {
+        console.error('Erro ao limpar o estado do LocalStorage:', error);
+    }
+}

@@ -4,9 +4,10 @@
  * Inicializa o aplicativo carregando os dados do storage e vincula os Event Listeners.
  */
 
-import { loadState, saveState } from './storage.js';
-import { appState, setState, adicionarMes } from './state.js';
-import { renderDashboard, showToast } from './ui.js';
+import { loadState, saveState, clearState } from './storage.js';
+import { appState, setState, adicionarMes, setMetaPatrimonio, limparRegistros } from './state.js';
+import { renderDashboard, showToast, setView, getView, showConfirmDialog } from './ui.js';
+import { resetCity } from './city.js';
 
 /**
  * Inicializa a aplicação:
@@ -24,49 +25,37 @@ export function init() {
         setState(estadoSalvo);
     }
 
-    // 3. Vincula listeners de formulários e interações
-    const form = document.getElementById('form-registro-financeiro');
-    if (form) {
-        form.addEventListener('submit', handleFormSubmit);
-        // Real-time feedback na Omni-Bar enquanto digita
-        form.addEventListener('input', handleRealTimeFeedback);
-    }
-
-    // Atalho Global (Ctrl+Space) para focar na Omni-Bar
-    document.addEventListener('keydown', handleKeyboardShortcuts);
+    // 3. Vincula listeners
+    bindFormListeners();
+    bindConfigListeners();
+    bindViewToggle();
+    bindClearButton();
+    bindKeyboardShortcuts();
 
     // 4. Renderiza a UI inicial
     renderDashboard(appState);
+
+    // Restaurar viewMode salvo
+    if (appState.viewMode === 'cidade') {
+        setView('cidade');
+    }
 }
 
-/**
- * Gerencia atalhos de teclado globais.
- * @param {KeyboardEvent} e
- */
-function handleKeyboardShortcuts(e) {
-    // Ctrl+Space: Focar na Omni-Bar
-    if (e.ctrlKey && e.code === 'Space') {
-        e.preventDefault();
-        const inputRenda = document.getElementById('input-renda');
-        if (inputRenda) inputRenda.focus();
+// ═══════════════════════════════════════════════════════
+// Form (Omni-Bar) Listeners
+// ═══════════════════════════════════════════════════════
 
-        // Esconde o kbd-hint após primeiro uso
-        const kbdHint = document.getElementById('kbd-hint');
-        if (kbdHint) kbdHint.classList.add('is-hidden');
-    }
-
-    // Escape: Desfocar a Omni-Bar
-    if (e.code === 'Escape') {
-        const activeEl = document.activeElement;
-        if (activeEl && activeEl.closest('.omni-bar')) {
-            activeEl.blur();
-        }
+function bindFormListeners() {
+    const form = document.getElementById('form-registro-financeiro');
+    if (form) {
+        form.addEventListener('submit', handleFormSubmit);
+        form.addEventListener('input', handleRealTimeFeedback);
     }
 }
 
 /**
- * Manipula a submissão do formulário de registro de novos meses (Omni-Bar).
- * @param {Event} e - Evento de submit do formulário
+ * Manipula a submissão do formulário de registro.
+ * @param {Event} e
  */
 export function handleFormSubmit(e) {
     e.preventDefault();
@@ -81,49 +70,35 @@ export function handleFormSubmit(e) {
     }
 
     try {
-        // O mês será gerado automaticamente no state.js
         adicionarMes(
             inputRenda.value,
             inputEconomizado.value
         );
 
-        // Calcula o nome do mês que acabou de ser adicionado
         const mesAdicionado = appState.registrosMensais[appState.registrosMensais.length - 1].mes;
         const percent = (parseFloat(inputEconomizado.value) / parseFloat(inputRenda.value) * 100).toFixed(1);
 
-        // Salva o novo estado de forma persistente
         saveState(appState);
-
-        // Atualiza a visualização do painel
         renderDashboard(appState);
 
-        // Reseta o formulário
         form.reset();
-
-        // Remove as classes de feedback temporárias do real-time
         form.classList.remove('is-success', 'is-alert');
 
-        // Limpa o live percent
         const livePercent = document.getElementById('omni-live-percent');
         if (livePercent) {
             livePercent.textContent = '';
             livePercent.classList.remove('is-visible', 'is-success', 'is-alert');
         }
 
-        // Toast de sucesso
         showToast(`${mesAdicionado} registrado ✓  (${percent}%)`, 'success');
-
-        // Mantém o foco no primeiro input para fluxo rápido
         inputRenda.focus();
     } catch (error) {
-        // Toast de erro em vez de alert()
         showToast(`Erro: ${error.message}`, 'alert');
     }
 }
 
 /**
- * Fornece feedback visual em tempo real alterando a borda da Omni-Bar
- * e exibindo o percentual calculado ao vivo.
+ * Feedback visual em tempo real na Omni-Bar.
  */
 function handleRealTimeFeedback() {
     const form = document.getElementById('form-registro-financeiro');
@@ -138,7 +113,6 @@ function handleRealTimeFeedback() {
         if (rendaFloat > 0 && economizadoFloat >= 0) {
             const percentual = (economizadoFloat / rendaFloat) * 100;
 
-            // Atualiza classes da Omni-Bar
             form.classList.remove('is-success', 'is-alert');
 
             if (percentual >= appState.metaEconomia) {
@@ -147,7 +121,6 @@ function handleRealTimeFeedback() {
                 form.classList.add('is-alert');
             }
 
-            // Atualiza live percent indicator
             if (livePercent) {
                 livePercent.textContent = `${percentual.toFixed(1)}%`;
                 livePercent.classList.add('is-visible');
@@ -156,12 +129,154 @@ function handleRealTimeFeedback() {
             }
         }
     } else {
-        // Se um dos campos está vazio, limpa o feedback
         form.classList.remove('is-success', 'is-alert');
         if (livePercent) {
             livePercent.textContent = '';
             livePercent.classList.remove('is-visible', 'is-success', 'is-alert');
         }
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+// Config Panel Listeners (Meta + Prazo)
+// ═══════════════════════════════════════════════════════
+
+function bindConfigListeners() {
+    const inputMeta = document.getElementById('input-meta-patrimonio');
+    const inputPrazo = document.getElementById('input-prazo-meta');
+
+    const saveConfigDebounced = debounce(() => {
+        const valor = inputMeta?.value || 0;
+        const prazo = inputPrazo?.value || 0;
+
+        setMetaPatrimonio(valor, prazo);
+        saveState(appState);
+        renderDashboard(appState);
+
+        if (parseFloat(valor) > 0) {
+            showToast('Meta atualizada ✓', 'success', 1500);
+        }
+    }, 800);
+
+    if (inputMeta) {
+        inputMeta.addEventListener('input', saveConfigDebounced);
+    }
+    if (inputPrazo) {
+        inputPrazo.addEventListener('input', saveConfigDebounced);
+    }
+}
+
+/**
+ * Debounce helper.
+ */
+function debounce(fn, delay) {
+    let timer = null;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
+
+// ═══════════════════════════════════════════════════════
+// View Toggle (Orbe ↔ Cidade)
+// ═══════════════════════════════════════════════════════
+
+function bindViewToggle() {
+    const btnOrbe = document.getElementById('btn-view-orbe');
+    const btnCidade = document.getElementById('btn-view-cidade');
+
+    if (btnOrbe) {
+        btnOrbe.addEventListener('click', () => {
+            setView('orbe');
+            appState.viewMode = 'orbe';
+            saveState(appState);
+            renderDashboard(appState);
+        });
+    }
+
+    if (btnCidade) {
+        btnCidade.addEventListener('click', () => {
+            setView('cidade');
+            appState.viewMode = 'cidade';
+            saveState(appState);
+            renderDashboard(appState);
+        });
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+// Clear Records Button
+// ═══════════════════════════════════════════════════════
+
+function bindClearButton() {
+    const btnClear = document.getElementById('btn-clear-records');
+
+    if (btnClear) {
+        btnClear.addEventListener('click', async () => {
+            if (appState.registrosMensais.length === 0) {
+                showToast('Não há registros para limpar', 'neutral', 1500);
+                return;
+            }
+
+            const confirmed = await showConfirmDialog({
+                title: 'Limpar Registros',
+                text: `Tem certeza que deseja apagar todos os ${appState.registrosMensais.length} registros? Esta ação não pode ser desfeita.`,
+                icon: '🗑️',
+                confirmText: 'Sim, apagar tudo',
+                cancelText: 'Cancelar'
+            });
+
+            if (confirmed) {
+                limparRegistros();
+                resetCity();
+                clearState();
+                saveState(appState);
+                renderDashboard(appState);
+                showToast('Registros limpos ✓', 'neutral', 2000);
+            }
+        });
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+// Keyboard Shortcuts
+// ═══════════════════════════════════════════════════════
+
+function bindKeyboardShortcuts() {
+    document.addEventListener('keydown', handleKeyboardShortcuts);
+}
+
+/**
+ * Gerencia atalhos de teclado globais.
+ * @param {KeyboardEvent} e
+ */
+function handleKeyboardShortcuts(e) {
+    // Ctrl+Space: Focar na Omni-Bar
+    if (e.ctrlKey && e.code === 'Space') {
+        e.preventDefault();
+        const inputRenda = document.getElementById('input-renda');
+        if (inputRenda) inputRenda.focus();
+
+        const kbdHint = document.getElementById('kbd-hint');
+        if (kbdHint) kbdHint.classList.add('is-hidden');
+    }
+
+    // Escape: Desfocar a Omni-Bar
+    if (e.code === 'Escape') {
+        const activeEl = document.activeElement;
+        if (activeEl && activeEl.closest('.omni-bar')) {
+            activeEl.blur();
+        }
+    }
+
+    // Tab: Alternar vista (quando não está em um input)
+    if (e.code === 'Tab' && !e.target.closest('input, textarea, select')) {
+        e.preventDefault();
+        const newView = getView() === 'orbe' ? 'cidade' : 'orbe';
+        setView(newView);
+        appState.viewMode = newView;
+        saveState(appState);
+        renderDashboard(appState);
     }
 }
 

@@ -2,16 +2,20 @@
  * ui.js
  * Manipulação do DOM e renderização gráfica (Chart.js).
  * Responsável pela atualização cirúrgica do DOM, animações de valor,
- * SVG ring, timeline, toasts e gerenciamento de estados visuais.
+ * SVG ring, timeline, toasts, toggle de vistas e barra de progresso.
  */
-import { calcularMetricas } from './state.js';
+import { calcularMetricas, calcularProgressoMeta } from './state.js';
 import { setParticleTheme } from './particles.js';
+import { initCity, updateCity, resetCity, getMilestoneInfo, isCityInitialized } from './city.js';
 
 // Instância única do gráfico Chart.js
 let chartInstance = null;
 
 // Cache do último valor renderizado no Orbe (para animação incremental)
 let lastRenderedValue = 0;
+
+// Estado do toggle de vista
+let currentView = 'orbe'; // 'orbe' ou 'cidade'
 
 // ═══════════════════════════════════════════════════════
 // Utilitários
@@ -30,18 +34,25 @@ function formatarMoeda(valor) {
 }
 
 /**
+ * Formata um número curto (ex: 100k, 1.5M).
+ */
+function formatarCurto(valor) {
+    if (valor >= 1_000_000) return `R$ ${(valor / 1_000_000).toFixed(1)}M`;
+    if (valor >= 1_000) return `R$ ${(valor / 1_000).toFixed(1)}k`;
+    return formatarMoeda(valor);
+}
+
+/**
  * Anima a contagem de um valor numérico em um elemento, usando requestAnimationFrame.
- * Cria efeito de "counting up" que reforça visualmente o progresso.
- * @param {HTMLElement} element - Elemento DOM cujo textContent será atualizado
- * @param {number} start - Valor inicial da contagem
- * @param {number} end - Valor final da contagem
- * @param {number} duration - Duração da animação em ms
- * @param {function} formatter - Função de formatação (ex: formatarMoeda)
+ * @param {HTMLElement} element
+ * @param {number} start
+ * @param {number} end
+ * @param {number} duration - ms
+ * @param {function} formatter
  */
 function animateValue(element, start, end, duration, formatter) {
     if (!element) return;
 
-    // Se a diferença for insignificante, setar direto
     if (Math.abs(end - start) < 0.01) {
         element.textContent = formatter(end);
         return;
@@ -52,8 +63,6 @@ function animateValue(element, start, end, duration, formatter) {
     function step(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-
-        // Curva ease-out para desacelerar no final
         const eased = 1 - Math.pow(1 - progress, 3);
         const currentValue = start + (end - start) * eased;
 
@@ -71,15 +80,14 @@ function animateValue(element, start, end, duration, formatter) {
 
 /**
  * Atualiza o SVG ring de progresso do Orbe.
- * @param {number} percent - Percentual de economia (0-100+)
+ * @param {number} percent
  */
 function updateOrbRing(percent) {
     const ring = document.getElementById('orb-ring-fill');
     if (!ring) return;
 
-    // Limita a 100% para visualização do ring
     const clampedPercent = Math.min(Math.max(percent, 0), 100);
-    const circumference = 339.29; // 2 × π × 54
+    const circumference = 339.29;
     const offset = circumference - (clampedPercent / 100) * circumference;
 
     ring.style.strokeDashoffset = offset;
@@ -87,13 +95,12 @@ function updateOrbRing(percent) {
 
 /**
  * Calcula a streak atual de meses consecutivos atingindo a meta.
- * @param {Array} registros - Lista de registros mensais
- * @param {number} meta - Percentual da meta de economia
- * @returns {number} Streak atual
+ * @param {Array} registros
+ * @param {number} meta
+ * @returns {number}
  */
 function calcularStreak(registros, meta) {
     let streak = 0;
-    // Percorre do final para o início
     for (let i = registros.length - 1; i >= 0; i--) {
         const reg = registros[i];
         const percent = reg.renda > 0 ? (reg.economizado / reg.renda) * 100 : 0;
@@ -112,9 +119,9 @@ function calcularStreak(registros, meta) {
 
 /**
  * Exibe uma notificação toast temporária.
- * @param {string} message - Mensagem a exibir
- * @param {'success'|'alert'|'neutral'} type - Tipo visual do toast
- * @param {number} duration - Duração em ms antes de desaparecer
+ * @param {string} message
+ * @param {'success'|'alert'|'neutral'} type
+ * @param {number} duration - ms
  */
 export function showToast(message, type = 'neutral', duration = 2500) {
     const container = document.getElementById('toast-container');
@@ -138,10 +145,6 @@ export function showToast(message, type = 'neutral', duration = 2500) {
 // Empty State
 // ═══════════════════════════════════════════════════════
 
-/**
- * Alterna a visibilidade do empty state.
- * @param {boolean} show - true para exibir, false para esconder
- */
 function renderEmptyState(show) {
     const el = document.getElementById('empty-state');
     const dataFlow = document.getElementById('data-flow');
@@ -153,23 +156,154 @@ function renderEmptyState(show) {
 }
 
 // ═══════════════════════════════════════════════════════
-// Records Timeline
+// View Toggle (Orbe ↔ Cidade)
 // ═══════════════════════════════════════════════════════
 
 /**
- * Renderiza a timeline vertical de registros mensais.
- * Cada registro é um nó com indicador de estado (sucesso/alerta/ouro).
- * @param {Array} registros - Lista de registros do appState
- * @param {number} meta - Meta de economia em %
+ * Alterna entre a vista do orbe (contador) e a cidade 3D.
+ * @param {'orbe'|'cidade'} view
  */
+export function setView(view) {
+    currentView = view;
+
+    const orb = document.getElementById('heritage-orb');
+    const emptyState = document.getElementById('empty-state');
+    const dataFlow = document.getElementById('data-flow');
+    const timeline = document.getElementById('records-timeline');
+    const cityContainer = document.getElementById('city-container');
+    const btnOrbe = document.getElementById('btn-view-orbe');
+    const btnCidade = document.getElementById('btn-view-cidade');
+
+    if (view === 'cidade') {
+        // Mostrar cidade, esconder orbe
+        orb?.classList.add('is-view-hidden');
+        emptyState?.classList.add('is-view-hidden');
+        dataFlow?.classList.add('is-view-hidden');
+        timeline?.classList.add('is-view-hidden');
+        cityContainer?.classList.add('is-visible');
+        btnOrbe?.classList.remove('is-active');
+        btnCidade?.classList.add('is-active');
+
+        // Inicializar a cidade se necessário
+        if (!isCityInitialized()) {
+            const canvas = document.getElementById('city-canvas');
+            if (canvas) initCity(canvas);
+        }
+    } else {
+        // Mostrar orbe, esconder cidade
+        orb?.classList.remove('is-view-hidden');
+        emptyState?.classList.remove('is-view-hidden');
+        dataFlow?.classList.remove('is-view-hidden');
+        timeline?.classList.remove('is-view-hidden');
+        cityContainer?.classList.remove('is-visible');
+        btnOrbe?.classList.add('is-active');
+        btnCidade?.classList.remove('is-active');
+    }
+}
+
+/**
+ * Retorna a vista ativa.
+ */
+export function getView() {
+    return currentView;
+}
+
+// ═══════════════════════════════════════════════════════
+// Progress Bar (Meta)
+// ═══════════════════════════════════════════════════════
+
+/**
+ * Renderiza a barra de progresso da meta de patrimônio.
+ * @param {Object} progressData - Dados de calcularProgressoMeta()
+ * @param {number} prazo - Prazo em meses
+ * @param {number} totalMeses - Total de meses registrados
+ */
+function renderProgressBar(progressData, prazo, totalMeses) {
+    const section = document.getElementById('progress-section');
+    if (!section) return;
+
+    if (!progressData.temMeta) {
+        section.classList.remove('is-visible');
+        return;
+    }
+
+    section.classList.add('is-visible');
+
+    // Valor atual
+    const progressValue = section.querySelector('.progress-value');
+    if (progressValue) {
+        progressValue.innerHTML = `${progressData.percentual.toFixed(1)}% <span class="progress-target">de ${formatarCurto(progressData.meta)}</span>`;
+    }
+
+    // Barra de preenchimento
+    const fill = section.querySelector('.progress-bar__fill');
+    if (fill) {
+        fill.style.width = `${Math.min(progressData.percentual, 100)}%`;
+        fill.classList.toggle('is-gold', progressData.percentual >= 100);
+    }
+
+    // Milestone dots
+    const milestonesContainer = section.querySelector('.progress-milestones');
+    if (milestonesContainer) {
+        milestonesContainer.innerHTML = '';
+        for (let i = 0; i <= 100; i += 10) {
+            const dot = document.createElement('span');
+            dot.className = 'progress-milestone';
+            dot.textContent = `${i}%`;
+            if (progressData.percentual >= i) {
+                dot.classList.add('is-reached');
+                if (progressData.percentual >= 100) dot.classList.add('is-gold');
+            }
+            milestonesContainer.appendChild(dot);
+        }
+    }
+
+    // Informação de tempo
+    const timeInfo = section.querySelector('.progress-time-info');
+    if (timeInfo && prazo > 0) {
+        const mesesRestantes = Math.max(prazo - totalMeses, 0);
+        const valorFalta = Math.max(progressData.meta - progressData.totalEconomizado, 0);
+
+        if (valorFalta <= 0) {
+            timeInfo.innerHTML = `🎉 <strong>Meta conquistada!</strong> Parabéns!`;
+        } else if (mesesRestantes > 0) {
+            const aporteNecessario = valorFalta / mesesRestantes;
+            timeInfo.innerHTML = `Faltam <strong>${mesesRestantes} meses</strong> · Aporte necessário: <strong>${formatarMoeda(aporteNecessario)}/mês</strong>`;
+        } else {
+            timeInfo.innerHTML = `⏰ Prazo expirado · Faltam <strong>${formatarMoeda(valorFalta)}</strong>`;
+        }
+    } else if (timeInfo) {
+        timeInfo.innerHTML = '';
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+// City Overlay
+// ═══════════════════════════════════════════════════════
+
+function updateCityOverlay(progressData) {
+    const overlay = document.getElementById('city-milestone-label');
+    if (!overlay) return;
+
+    if (!progressData.temMeta) {
+        overlay.textContent = '🌱 Defina uma meta para ver a cidade crescer';
+        return;
+    }
+
+    const info = getMilestoneInfo(progressData.percentual);
+    overlay.innerHTML = `<span class="milestone-emoji">${info.current.emoji}</span>${info.current.label} — ${progressData.percentual.toFixed(1)}%`;
+}
+
+// ═══════════════════════════════════════════════════════
+// Records Timeline
+// ═══════════════════════════════════════════════════════
+
 function renderTimeline(registros, meta) {
     const container = document.getElementById('records-timeline');
     if (!container) return;
 
-    // Limpa a timeline existente
     container.innerHTML = '';
 
-    // Renderiza do mais recente para o mais antigo
     const reversed = [...registros].reverse();
     const streak = calcularStreak(registros, meta);
 
@@ -178,10 +312,8 @@ function renderTimeline(registros, meta) {
         const percent = reg.renda > 0 ? (reg.economizado / reg.renda) * 100 : 0;
         const hitMeta = percent >= meta;
 
-        // Determina se esse registro faz parte da streak de ouro
         const isInGoldStreak = streak >= 3 && realIndex >= registros.length - streak;
 
-        // Cria o nó
         const node = document.createElement('div');
         node.className = 'timeline-node';
         if (isInGoldStreak) {
@@ -192,10 +324,8 @@ function renderTimeline(registros, meta) {
             node.classList.add('is-alert');
         }
 
-        // Delay escalonado para animação de entrada
         node.style.animationDelay = `${displayIndex * 0.06}s`;
 
-        // Determinar texto do badge
         let badgeClass = hitMeta ? 'is-success' : 'is-alert';
         if (isInGoldStreak) badgeClass = 'is-gold';
         const badgeText = `${percent.toFixed(1)}%`;
@@ -216,20 +346,83 @@ function renderTimeline(registros, meta) {
 }
 
 // ═══════════════════════════════════════════════════════
+// Confirmation Dialog
+// ═══════════════════════════════════════════════════════
+
+/**
+ * Mostra um diálogo de confirmação modal.
+ * @param {Object} options
+ * @returns {Promise<boolean>}
+ */
+export function showConfirmDialog({ title, text, icon = '⚠️', confirmText = 'Confirmar', cancelText = 'Cancelar' }) {
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay';
+        overlay.innerHTML = `
+            <div class="confirm-dialog">
+                <div class="confirm-dialog__icon">${icon}</div>
+                <h2 class="confirm-dialog__title">${title}</h2>
+                <p class="confirm-dialog__text">${text}</p>
+                <div class="confirm-dialog__actions">
+                    <button class="confirm-dialog__btn confirm-dialog__btn--cancel" id="confirm-cancel">${cancelText}</button>
+                    <button class="confirm-dialog__btn confirm-dialog__btn--danger" id="confirm-ok">${confirmText}</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const cleanup = (result) => {
+            overlay.remove();
+            resolve(result);
+        };
+
+        overlay.querySelector('#confirm-cancel').addEventListener('click', () => cleanup(false));
+        overlay.querySelector('#confirm-ok').addEventListener('click', () => cleanup(true));
+
+        // Fechar clicando fora do diálogo
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) cleanup(false);
+        });
+
+        // ESC para fechar
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                document.removeEventListener('keydown', handleEsc);
+                cleanup(false);
+            }
+        };
+        document.addEventListener('keydown', handleEsc);
+    });
+}
+
+// ═══════════════════════════════════════════════════════
 // Main Dashboard Render
 // ═══════════════════════════════════════════════════════
 
 /**
  * Atualiza o DOM com base no estado atualizado da aplicação.
- * Orquestra a renderização de todos os componentes visuais.
- * @param {Object} state - O estado da aplicação (appState)
+ * @param {Object} state
  */
 export function renderDashboard(state) {
     const metricas = calcularMetricas();
     const hasRecords = state.registrosMensais.length > 0;
+    const progressData = calcularProgressoMeta();
 
     // ── Empty State ──
-    renderEmptyState(!hasRecords);
+    if (currentView === 'orbe') {
+        renderEmptyState(!hasRecords);
+    }
+
+    // ── Config Panel: atualizar inputs com valores do estado ──
+    const inputMeta = document.getElementById('input-meta-patrimonio');
+    const inputPrazo = document.getElementById('input-prazo-meta');
+    if (inputMeta && !inputMeta.matches(':focus') && state.metaPatrimonio > 0) {
+        inputMeta.value = state.metaPatrimonio;
+    }
+    if (inputPrazo && !inputPrazo.matches(':focus') && state.prazoMeta > 0) {
+        inputPrazo.value = state.prazoMeta;
+    }
 
     // ── Orbe: Animated Value ──
     const orbValue = document.getElementById('orb-value');
@@ -246,9 +439,11 @@ export function renderDashboard(state) {
 
     // ── Orbe: Percent Display ──
     const orbPercent = document.getElementById('orb-percent');
+    const displayPercent = progressData.temMeta ? progressData.percentual : metricas.percentualGeral;
+
     if (orbPercent) {
         if (hasRecords) {
-            orbPercent.textContent = `${metricas.percentualGeral.toFixed(1)}%`;
+            orbPercent.textContent = `${displayPercent.toFixed(1)}%`;
             orbPercent.classList.add('is-visible');
         } else {
             orbPercent.classList.remove('is-visible');
@@ -256,25 +451,25 @@ export function renderDashboard(state) {
     }
 
     // ── Orbe: SVG Ring ──
-    updateOrbRing(hasRecords ? metricas.percentualGeral : 0);
+    updateOrbRing(hasRecords ? displayPercent : 0);
 
-    // ── State Classes (Comportamental) ──
+    // ── State Classes ──
     const orb = document.getElementById('heritage-orb');
     const omniBar = document.getElementById('form-registro-financeiro');
     const streak = calcularStreak(state.registrosMensais, state.metaEconomia);
 
-    // Limpa estados anteriores
     if (orb) orb.classList.remove('is-success', 'is-alert', 'is-gold');
     if (omniBar) omniBar.classList.remove('is-success', 'is-alert');
 
     if (hasRecords) {
-        const isGold = streak >= 3 && metricas.atingiuMetaGeral;
+        const atingiuObjetivo = progressData.temMeta ? (progressData.percentual >= 100) : metricas.atingiuMetaGeral;
+        const isGold = progressData.temMeta ? (progressData.percentual >= 100) : (streak >= 3 && metricas.atingiuMetaGeral);
 
         if (isGold) {
             orb?.classList.add('is-gold');
             omniBar?.classList.add('is-success');
             setParticleTheme('gold');
-        } else if (metricas.atingiuMetaGeral) {
+        } else if (atingiuObjetivo) {
             orb?.classList.add('is-success');
             omniBar?.classList.add('is-success');
             setParticleTheme('success');
@@ -285,16 +480,26 @@ export function renderDashboard(state) {
         }
     } else {
         setParticleTheme('neutral');
+        lastRenderedValue = 0;
     }
 
+    // ── Progress Bar ──
+    renderProgressBar(progressData, state.prazoMeta, state.registrosMensais.length);
+
     // ── Chart ──
-    if (hasRecords) {
+    if (hasRecords && currentView === 'orbe') {
         renderChart(state.registrosMensais);
     }
 
     // ── Timeline ──
-    if (hasRecords) {
+    if (hasRecords && currentView === 'orbe') {
         renderTimeline(state.registrosMensais, state.metaEconomia);
+    }
+
+    // ── City Update ──
+    if (isCityInitialized()) {
+        const milestone = updateCity(progressData.percentual, metricas.mesesMetaAtingida);
+        updateCityOverlay(progressData);
     }
 }
 
@@ -304,8 +509,7 @@ export function renderDashboard(state) {
 
 /**
  * Inicializa ou reconstrói o gráfico do Chart.js com design imersivo.
- * Utiliza gradientes e styling dark-mode premium.
- * @param {Array} registros - Lista de registros mensais
+ * @param {Array} registros
  */
 export function renderChart(registros) {
     const canvas = document.getElementById('chart-rendimentos');
@@ -313,7 +517,6 @@ export function renderChart(registros) {
 
     const ctx = canvas.getContext('2d');
 
-    // Destrói instância anterior para evitar conflito
     if (chartInstance) {
         chartInstance.destroy();
     }
@@ -322,12 +525,10 @@ export function renderChart(registros) {
     const dadosRenda = registros.map(r => r.renda);
     const dadosEconomizado = registros.map(r => r.economizado);
 
-    // Gradiente para a área de economizado
     const gradientEconomizado = ctx.createLinearGradient(0, 0, 0, canvas.height || 280);
     gradientEconomizado.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
     gradientEconomizado.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
 
-    // Gradiente para a área de renda
     const gradientRenda = ctx.createLinearGradient(0, 0, 0, canvas.height || 280);
     gradientRenda.addColorStop(0, 'rgba(100, 116, 139, 0.15)');
     gradientRenda.addColorStop(1, 'rgba(100, 116, 139, 0.02)');

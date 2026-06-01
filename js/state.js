@@ -9,10 +9,13 @@ const NOMES_MESES = [
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
-// Estado inicial da aplicação conforme especificado no Tópico 6
+// Estado inicial da aplicação
 export let appState = {
-    metaEconomia: 10, // Porcentagem padrão recomendada (10%)
-    registrosMensais: []
+    metaEconomia: 10,           // Porcentagem padrão recomendada (10%)
+    metaPatrimonio: 0,          // Valor-alvo em R$ (0 = não definido)
+    prazoMeta: 0,               // Prazo em meses (0 = não definido)
+    registrosMensais: [],
+    viewMode: 'orbe'            // 'orbe' ou 'cidade'
 };
 
 /**
@@ -23,6 +26,31 @@ export function setState(newState) {
     if (newState) {
         appState = { ...appState, ...newState };
     }
+}
+
+/**
+ * Define a meta de patrimônio e prazo.
+ * @param {number|string} valor - Valor-alvo em R$
+ * @param {number|string} prazo - Prazo em meses
+ */
+export function setMetaPatrimonio(valor, prazo) {
+    const valorFloat = parseFloat(valor);
+    const prazoInt = parseInt(prazo, 10);
+
+    if (!isNaN(valorFloat) && valorFloat >= 0) {
+        appState.metaPatrimonio = valorFloat;
+    }
+
+    if (!isNaN(prazoInt) && prazoInt >= 0) {
+        appState.prazoMeta = prazoInt;
+    }
+}
+
+/**
+ * Limpa todos os registros mensais, resetando para estado inicial.
+ */
+export function limparRegistros() {
+    appState.registrosMensais = [];
 }
 
 /**
@@ -75,10 +103,46 @@ export function calcularMetricas() {
     const percentualGeral = totalRenda > 0 ? (totalEconomizado / totalRenda) * 100 : 0;
     const atingiuMetaGeral = percentualGeral >= appState.metaEconomia;
 
+    const mesesMetaAtingida = appState.registrosMensais.filter(reg => {
+        const percent = reg.renda > 0 ? (reg.economizado / reg.renda) * 100 : 0;
+        return percent >= appState.metaEconomia;
+    }).length;
+
     return {
         totalRenda,
         totalEconomizado,
         percentualGeral,
-        atingiuMetaGeral
+        atingiuMetaGeral,
+        mesesMetaAtingida
+    };
+}
+
+/**
+ * Calcula o progresso em relação à meta de patrimônio.
+ * @returns {Object} Objeto com progresso percentual e informações de marcos atingidos
+ */
+export function calcularProgressoMeta() {
+    const { totalEconomizado } = calcularMetricas();
+    const meta = appState.metaPatrimonio;
+
+    if (meta <= 0) {
+        return {
+            percentual: 0,
+            totalEconomizado,
+            meta: 0,
+            milestoneAtual: 0,
+            temMeta: false
+        };
+    }
+
+    const percentual = Math.min((totalEconomizado / meta) * 100, 100);
+    const milestoneAtual = Math.floor(percentual / 10) * 10; // 0, 10, 20, ...100
+
+    return {
+        percentual,
+        totalEconomizado,
+        meta,
+        milestoneAtual,
+        temMeta: true
     };
 }

@@ -76,6 +76,21 @@
     --shadow-glass: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     --shadow-elevated: 0 10px 25px rgba(0, 0, 0, 0.5);
     --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    /* ── City & Progress Colors ── */
+    --color-city-ground: #1a3a2a;
+    --color-city-road: #334155;
+    --color-city-sky: #0c1929;
+    --color-progress-track: rgba(51, 65, 85, 0.5);
+    --color-progress-fill: linear-gradient(90deg, #10B981, #34D399, #6EE7B7);
+    --color-progress-gold: linear-gradient(90deg, #F59E0B, #FBBF24, #FCD34D);
+
+    /* ── Config Panel ── */
+    --color-config-bg: rgba(15, 23, 42, 0.6);
+    --color-config-border: rgba(255, 255, 255, 0.06);
+    --color-danger: #DC2626;
+    --color-danger-soft: rgba(220, 38, 38, 0.12);
+    --color-danger-glow: rgba(220, 38, 38, 0.25);
 }
 
 /* ── Reset ── */
@@ -219,6 +234,33 @@ body {
 @keyframes breathe {
     0%, 100% { opacity: 0.6; }
     50% { opacity: 1; }
+}
+
+@keyframes view-switch-out {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.92); }
+}
+
+@keyframes view-switch-in {
+    from { opacity: 0; transform: scale(1.06); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes milestone-pop {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes progress-glow {
+    0%, 100% { box-shadow: 0 0 6px rgba(16, 185, 129, 0.3); }
+    50% { box-shadow: 0 0 16px rgba(16, 185, 129, 0.6); }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
 }
 
 /* ── Utility ── */
