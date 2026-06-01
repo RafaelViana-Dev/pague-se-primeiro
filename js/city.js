@@ -11,23 +11,24 @@ let activeMilestones = new Set();
 let currentPercent = 0;
 let renderedCommonHouses = 0;
 let isInitialized = false;
+let fireworks = [];
 
 // ═══════════════════════════════════════════════════════
 // Definição dos marcos da cidade
 // ═══════════════════════════════════════════════════════
 
 const MILESTONES = [
-    { percent: 0,   type: 'terrain',     label: 'Terreno',           emoji: '🌱' },
-    { percent: 10,  type: 'fountain',    label: 'Chafariz',          emoji: '⛲' },
-    { percent: 20,  type: 'shop',        label: 'Loja',              emoji: '🏪' },
-    { percent: 30,  type: 'car',         label: 'Carro',             emoji: '🚗' },
-    { percent: 40,  type: 'building',    label: 'Prédio Comercial',  emoji: '🏢' },
-    { percent: 50,  type: 'hospital',    label: 'Hospital',          emoji: '🏥' },
-    { percent: 60,  type: 'bus',         label: 'Transporte',        emoji: '🚌' },
-    { percent: 70,  type: 'mall',        label: 'Shopping',          emoji: '🏬' },
-    { percent: 80,  type: 'skyscraper',  label: 'Arranha-céu',       emoji: '🏗️' },
-    { percent: 90,  type: 'park',        label: 'Parque',            emoji: '🌳' },
-    { percent: 100, type: 'celebration', label: 'Cidade Completa',   emoji: '🎆' },
+    { percent: 0, type: 'terrain', label: 'Terreno', emoji: '🌱' },
+    { percent: 10, type: 'fountain', label: 'Chafariz', emoji: '⛲' },
+    { percent: 20, type: 'shop', label: 'Loja', emoji: '🏪' },
+    { percent: 30, type: 'car', label: 'Carro', emoji: '🚗' },
+    { percent: 40, type: 'building', label: 'Prédio Comercial', emoji: '🏢' },
+    { percent: 50, type: 'hospital', label: 'Hospital', emoji: '🏥' },
+    { percent: 60, type: 'bus', label: 'Transporte', emoji: '🚌' },
+    { percent: 70, type: 'mall', label: 'Shopping', emoji: '🏬' },
+    { percent: 80, type: 'skyscraper', label: 'Arranha-céu', emoji: '🏗️' },
+    { percent: 90, type: 'park', label: 'Parque', emoji: '🌳' },
+    { percent: 100, type: 'celebration', label: 'Cidade Completa', emoji: '🎆' },
 ];
 
 // Paleta de cores para a cidade (tons vibrantes e premium)
@@ -313,7 +314,7 @@ function buildHouse() {
 // ── Loja/Comércio ──
 function buildShop() {
     const group = new THREE.Group();
-    group.position.set(-4, 0, 4);
+    group.position.set(-3.5, 0, 3.5);
 
     // Corpo
     const bodyGeo = new THREE.BoxGeometry(2.5, 1.8, 2.2);
@@ -492,7 +493,7 @@ function buildHospital() {
 function buildBus() {
     const group = new THREE.Group();
     group.position.set(-0.8, 0, 5);
-    group.rotation.y = Math.PI / 2;
+    group.rotation.y = 0;
 
     // Corpo
     const bodyGeo = new THREE.BoxGeometry(1.2, 1.1, 3);
@@ -530,7 +531,7 @@ function buildBus() {
 // ── Shopping/Mall ──
 function buildMall() {
     const group = new THREE.Group();
-    group.position.set(-6, 0, 5);
+    group.position.set(-7.5, 0, 6);
 
     // Corpo
     const bodyGeo = new THREE.BoxGeometry(3.5, 3, 3);
@@ -571,7 +572,7 @@ function buildMall() {
 // ── Arranha-céu ──
 function buildSkyscraper() {
     const group = new THREE.Group();
-    group.position.set(6, 0, 5);
+    group.position.set(8, 0, 8);
 
     const height = 8;
     // Corpo
@@ -790,6 +791,49 @@ function buildFountain() {
     return group;
 }
 
+// ── Campo de Futebol ──
+function buildSoccerField() {
+    const group = new THREE.Group();
+    group.position.set(-8, 0, -8);
+
+    const fieldGeo = new THREE.PlaneGeometry(6, 4);
+    const fieldMat = createMaterial(0x166534);
+    const field = new THREE.Mesh(fieldGeo, fieldMat);
+    field.rotation.x = -Math.PI / 2;
+    field.position.y = 0.03;
+    field.receiveShadow = true;
+    group.add(field);
+
+    const linesGeo = new THREE.PlaneGeometry(5.6, 3.6);
+    const linesMat = createMaterial(0xffffff, { transparent: true, opacity: 0.8 });
+    const lines = new THREE.Mesh(linesGeo, linesMat);
+    lines.rotation.x = -Math.PI / 2;
+    lines.position.y = 0.035;
+    group.add(lines);
+
+    const innerGeo = new THREE.PlaneGeometry(5.4, 3.4);
+    const innerMat = createMaterial(0x166534);
+    const inner = new THREE.Mesh(innerGeo, innerMat);
+    inner.rotation.x = -Math.PI / 2;
+    inner.position.y = 0.04;
+    group.add(inner);
+    
+    const goalGeo = new THREE.BoxGeometry(0.2, 0.6, 1.2);
+    const goalMat = createMaterial(0xffffff);
+    
+    const goal1 = new THREE.Mesh(goalGeo, goalMat);
+    goal1.position.set(-2.7, 0.3, 0);
+    goal1.castShadow = true;
+    group.add(goal1);
+    
+    const goal2 = new THREE.Mesh(goalGeo, goalMat);
+    goal2.position.set(2.7, 0.3, 0);
+    goal2.castShadow = true;
+    group.add(goal2);
+
+    return group;
+}
+
 // ═══════════════════════════════════════════════════════
 // Mapa tipo → construtor
 // ═══════════════════════════════════════════════════════
@@ -844,13 +888,13 @@ export function updateCity(percent, monthsHit = 0) {
         }
     });
 
-    // Adicionar carros extras no milestone de 60%
-    if (percent >= 60 && !activeMilestones.has('extra-cars')) {
-        const car2 = buildCar(COLORS.carBody2, -0.8, -6);
-        car2.scale.set(0, 0, 0);
-        cityGroup.add(car2);
-        animateEntry(car2);
-        activeMilestones.add('extra-cars');
+    // Adicionar campo de futebol no milestone de 60%
+    if (percent >= 60 && !activeMilestones.has('soccer-field')) {
+        const field = buildSoccerField();
+        field.scale.set(0, 0, 0);
+        cityGroup.add(field);
+        animateEntry(field);
+        activeMilestones.add('soccer-field');
     }
 
     // Adicionar casas comuns (para metas mensais atingidas)
@@ -873,18 +917,18 @@ function placeCommonHouse(index) {
             if (x > -8 && x < 8 && z > -10 && z < 8) continue;
             // avoid roads (x=0, z=0 approx)
             if (Math.abs(x) < 3.5 || Math.abs(z) < 3.5) continue;
-            validSpots.push({x, z});
+            validSpots.push({ x, z });
         }
     }
-    
+
     const spot = validSpots[index % validSpots.length];
     const house = buildHouse();
-    
+
     // Override position to put it in the outskirts
-    house.position.set(spot.x + (Math.random()*0.5 - 0.25), 0, spot.z + (Math.random()*0.5 - 0.25));
+    house.position.set(spot.x + (Math.random() * 0.5 - 0.25), 0, spot.z + (Math.random() * 0.5 - 0.25));
     // Random rotation (0, 90, 180, 270 degrees)
     house.rotation.y = (Math.floor(Math.random() * 4)) * (Math.PI / 2);
-    
+
     return house;
 }
 
@@ -929,6 +973,12 @@ export function resetCity() {
     activeMilestones.clear();
     currentPercent = 0;
     renderedCommonHouses = 0;
+
+    fireworks.forEach(fw => {
+        if (fw.geometry) fw.geometry.dispose();
+        if (fw.material) fw.material.dispose();
+    });
+    fireworks = [];
 }
 
 function disposeGroup(obj) {
@@ -993,6 +1043,52 @@ function animate() {
                 child.rotation.x = Math.sin(time) * 0.2;
             }
         });
+    }
+
+    // Lógica dos Fogos de Artifício (quando 100%)
+    if (currentPercent >= 100 && cityGroup) {
+        if (Math.random() < 0.04) {
+            const color = new THREE.Color().setHSL(Math.random(), 1, 0.6);
+            const fw = new THREE.Mesh(
+                new THREE.SphereGeometry(0.15, 8, 8),
+                new THREE.MeshBasicMaterial({ color: color })
+            );
+            
+            // Nas extremidades (borda do terreno 35x35 -> -17 a 17)
+            const edge = Math.floor(Math.random() * 4);
+            let x = 0, z = 0;
+            if (edge === 0) { x = -16; z = (Math.random() - 0.5) * 32; }
+            if (edge === 1) { x = 16; z = (Math.random() - 0.5) * 32; }
+            if (edge === 2) { x = (Math.random() - 0.5) * 32; z = -16; }
+            if (edge === 3) { x = (Math.random() - 0.5) * 32; z = 16; }
+            
+            fw.position.set(x, 0, z);
+            fw.userData = { phase: 'launch', velY: 0.15 + Math.random() * 0.1, targetY: 6 + Math.random() * 6 };
+            cityGroup.add(fw);
+            fireworks.push(fw);
+        }
+
+        for (let i = fireworks.length - 1; i >= 0; i--) {
+            const fw = fireworks[i];
+            if (fw.userData.phase === 'launch') {
+                fw.position.y += fw.userData.velY;
+                if (fw.position.y >= fw.userData.targetY) {
+                    fw.userData.phase = 'explode';
+                    fw.userData.life = 1.0;
+                    fw.material.transparent = true;
+                }
+            } else if (fw.userData.phase === 'explode') {
+                fw.userData.life -= 0.025;
+                fw.scale.addScalar(0.4);
+                fw.material.opacity = fw.userData.life;
+                if (fw.userData.life <= 0) {
+                    cityGroup.remove(fw);
+                    fw.geometry.dispose();
+                    fw.material.dispose();
+                    fireworks.splice(i, 1);
+                }
+            }
+        }
     }
 
     renderer.render(scene, camera);
