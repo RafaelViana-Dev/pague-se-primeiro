@@ -4,6 +4,11 @@
  * Mantém o estado mutável em memória e aplica validações de regras de negócio.
  */
 
+const NOMES_MESES = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
+
 // Estado inicial da aplicação conforme especificado no Tópico 6
 export let appState = {
     metaEconomia: 10, // Porcentagem padrão recomendada (10%)
@@ -43,9 +48,11 @@ export function adicionarMes(renda, economizado) {
         throw new Error('O valor economizado não pode ser maior que a renda.');
     }
 
-    // Gera um nome sequencial para o mês (ex: Mês 1, Mês 2)
-    const proximoNumero = appState.registrosMensais.length + 1;
-    const mesGerado = `Mês ${proximoNumero}`;
+    // Gera um nome sequencial para o mês (ex: Janeiro, Fevereiro, etc.)
+    const totalRegistros = appState.registrosMensais.length;
+    const mesBase = NOMES_MESES[totalRegistros % 12];
+    const ano = Math.floor(totalRegistros / 12) + 1;
+    const mesGerado = ano > 1 ? `${mesBase} (Ano ${ano})` : mesBase;
 
     const novoRegistro = {
         id: String(Date.now()), // Timestamp único para identificação
